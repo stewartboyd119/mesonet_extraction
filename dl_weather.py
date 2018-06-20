@@ -5,6 +5,7 @@ from __future__ import print_function
 import json
 import time
 import datetime
+#import timedelta
 # Python 2 and 3: alternative 4
 try:
     from urllib.request import urlopen
@@ -15,7 +16,7 @@ except ImportError:
 MAX_ATTEMPTS = 6
 # HTTPS here can be problematic for installs that don't have Lets Encrypt CA
 SERVICE = "http://mesonet.agron.iastate.edu/cgi-bin/request/asos.py?"
-
+#_SERVCE = "https://mesonet.agron.iastate.edu/cgi-bin/request/asos.py?station=PHX&data=metar&year1=2018&month1=6&day1=18&year2=2018&month2=6&day2=18&tz=Etc%2FUTC&format=onlycomma&latlon=no&direct=no&report_type=2
 
 def download_data(uri):
     """Fetch the data from the IEM
@@ -45,19 +46,31 @@ def download_data(uri):
 def main():
     """Our main method"""
     # timestamps in UTC to request data for
-    startts = datetime.datetime(2012, 8, 1)
-    endts = datetime.datetime(2012, 9, 1)
 
-    service = SERVICE + "data=all&tz=Etc/UTC&format=comma&latlon=yes&"
-
+    startts = datetime.datetime.today() - datetime.timedelta(days=1)
+    endts = datetime.datetime.today() - datetime.timedelta(days=1)
+    service = SERVICE + "data=metar&tz=Etc%2FUTC&format=onlycomma&latlon=no&direct=no&report_type=2&"
     service += startts.strftime('year1=%Y&month1=%m&day1=%d&')
     service += endts.strftime('year2=%Y&month2=%m&day2=%d&')
 
-    states = """AK AL AR AZ CA CO CT DE FL GA HI IA ID IL IN KS KY LA MA MD ME
-     MI MN MO MS MT NC ND NE NH NJ NM NV NY OH OK OR PA RI SC SD TN TX UT VA VT
-     WA WI WV WY"""
+    '''
+    1) Phoenix, AZ(KPHX)
+    2) Colorado
+    Springs, (KCOS)
+    3) Fargo
+    ND, (KFAR)
+    4) Chicago
+    Midway, (KMDW)
+    5) Daytonna
+    Beach, FL(KDAB)
+    6) Dallas
+    Love(KDAL)
+    '''
+
+
+    states = "AZ CO IL ND FL TX"
     # IEM quirk to have Iowa AWOS sites in its own labeled network
-    networks = ['AWOS']
+    networks = []
     for state in states.split():
         networks.append("%s_ASOS" % (state,))
 
@@ -73,6 +86,7 @@ def main():
             uri = '%s&station=%s' % (service, faaid)
             print(('Network: %s Downloading: %s [%s]'
                    ) % (network, sitename, faaid))
+            print(uri)
             data = download_data(uri)
             outfn = '%s_%s_%s.txt' % (faaid, startts.strftime("%Y%m%d%H%M"),
                                       endts.strftime("%Y%m%d%H%M"))
