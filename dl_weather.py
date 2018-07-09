@@ -5,6 +5,7 @@ from __future__ import print_function
 import json
 import time
 import datetime
+from pprint import pprint
 #import timedelta
 # Python 2 and 3: alternative 4
 try:
@@ -68,21 +69,32 @@ def main():
     '''
 
 
-    states = "AZ CO IL ND FL TX"
-    # IEM quirk to have Iowa AWOS sites in its own labeled network
-    networks = []
-    for state in states.split():
-        networks.append("%s_ASOS" % (state,))
+    #states = "CA IL WA FL TX"
+    #ca = "CA"
+    faaid_key = "faaid"
+    sitename_key = "sitename"
+    states2airports = {"CA": [{faaid_key: "LAX", sitename_key: "LOS ANGELES INTL"}],
+              "IL": [{faaid_key: "MDW", sitename_key: "CHICAGO"}],
+              "WA": [{faaid_key: "SEA", sitename_key: "SEATTLE-TACOMA INTL"}],
+              "FL": [{faaid_key: "DAB", sitename_key: "DAYTONA BEACH RGNL"}],
+              "TX": [{faaid_key: "HOU", sitename_key: "HOUSTON/WILL HOBBY"},
+                     {faaid_key: "SAT", sitename_key: "SAN ANTONIO INTL"}]}
 
-    for network in networks:
+    state2site = {}
+    # IEM quirk to have Iowa AWOS sites in its own labeled network
+
+    for state in states2airports:
+        airports = states2airports[state]
+        network = "{}_ASOS".format(state)
+
         # Get metadata
         uri = ("https://mesonet.agron.iastate.edu/"
                "geojson/network/%s.geojson") % (network,)
-        data = urlopen(uri)
-        jdict = json.load(data)
-        for site in jdict['features']:
-            faaid = site['properties']['sid']
-            sitename = site['properties']['sname']
+        print("#" * 10)
+        print(network)
+        for airport in airports:
+            faaid = airport[faaid_key]
+            sitename = airport[sitename_key]
             uri = '%s&station=%s' % (service, faaid)
             print(('Network: %s Downloading: %s [%s]'
                    ) % (network, sitename, faaid))
