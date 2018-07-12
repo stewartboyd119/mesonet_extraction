@@ -5,8 +5,7 @@ from __future__ import print_function
 import json
 import time
 import datetime
-from pprint import pprint
-#import timedelta
+import os
 # Python 2 and 3: alternative 4
 try:
     from urllib.request import urlopen
@@ -17,7 +16,7 @@ except ImportError:
 MAX_ATTEMPTS = 6
 # HTTPS here can be problematic for installs that don't have Lets Encrypt CA
 SERVICE = "http://mesonet.agron.iastate.edu/cgi-bin/request/asos.py?"
-#_SERVCE = "https://mesonet.agron.iastate.edu/cgi-bin/request/asos.py?station=PHX&data=metar&year1=2018&month1=6&day1=18&year2=2018&month2=6&day2=18&tz=Etc%2FUTC&format=onlycomma&latlon=no&direct=no&report_type=2
+
 
 def download_data(uri):
     """Fetch the data from the IEM
@@ -47,61 +46,43 @@ def download_data(uri):
 def main():
     """Our main method"""
     # timestamps in UTC to request data for
-
     startts = datetime.datetime.today() - datetime.timedelta(days=1)
     endts = datetime.datetime.today() - datetime.timedelta(days=1)
+
     service = SERVICE + "data=metar&tz=Etc%2FUTC&format=onlycomma&latlon=no&direct=no&report_type=2&"
     service += startts.strftime('year1=%Y&month1=%m&day1=%d&')
     service += endts.strftime('year2=%Y&month2=%m&day2=%d&')
 
-    '''
-    1) Phoenix, AZ(KPHX)
-    2) Colorado
-    Springs, (KCOS)
-    3) Fargo
-    ND, (KFAR)
-    4) Chicago
-    Midway, (KMDW)
-    5) Daytonna
-    Beach, FL(KDAB)
-    6) Dallas
-    Love(KDAL)
-    '''
-
-
-    #states = "CA IL WA FL TX"
-    #ca = "CA"
-    faaid_key = "faaid"
-    sitename_key = "sitename"
-    states2airports = {"CA": [{faaid_key: "LAX", sitename_key: "LOS ANGELES INTL"}],
-              "IL": [{faaid_key: "MDW", sitename_key: "CHICAGO"}],
-              "WA": [{faaid_key: "SEA", sitename_key: "SEATTLE-TACOMA INTL"}],
-              "FL": [{faaid_key: "DAB", sitename_key: "DAYTONA BEACH RGNL"}],
-              "TX": [{faaid_key: "HOU", sitename_key: "HOUSTON/WILL HOBBY"},
-                     {faaid_key: "SAT", sitename_key: "SAN ANTONIO INTL"}]}
-
-    state2site = {}
+    states = """AK AL AR AZ CA CO CT DE FL GA HI IA ID IL IN KS KY LA MA MD ME
+     MI MN MO MS MT NC ND NE NH NJ NM NV NY OH OK OR PA RI SC SD TN TX UT VA VT
+     WA WI WV WY"""
     # IEM quirk to have Iowa AWOS sites in its own labeled network
+    out_dir = "python_output"
+    try:
+        os.mkdir(out_dir)
+    except OSError:
+        # directory probably is already created
+        pass
+    networks = []
+    for state in states.split():
+        networks.append("%s_ASOS" % (state,))
 
-    for state in states2airports:
-        airports = states2airports[state]
-        network = "{}_ASOS".format(state)
-
+    for network in networks:
         # Get metadata
         uri = ("https://mesonet.agron.iastate.edu/"
                "geojson/network/%s.geojson") % (network,)
-        print("#" * 10)
-        print(network)
-        for airport in airports:
-            faaid = airport[faaid_key]
-            sitename = airport[sitename_key]
+        data = urlopen(uri)
+        jdict = json.load(data)
+        for site in jdict['features']:
+            faaid = site['properties']['sid']
+            sitename = site['properties']['sname']
             uri = '%s&station=%s' % (service, faaid)
             print(('Network: %s Downloading: %s [%s]'
                    ) % (network, sitename, faaid))
-            print(uri)
             data = download_data(uri)
-            outfn = '%s_%s_%s.txt' % (faaid, startts.strftime("%Y%m%d%H%M"),
+            outfn = '%s_%s_%s_%s.txt' % (network, faaid, startts.strftime("%Y%m%d%H%M"),
                                       endts.strftime("%Y%m%d%H%M"))
+            outfn = os.path.join(out_dir, outfn)
             out = open(outfn, 'w')
             out.write(data)
             out.close()
