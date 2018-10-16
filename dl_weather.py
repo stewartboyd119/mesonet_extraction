@@ -53,9 +53,11 @@ def main():
     service += startts.strftime('year1=%Y&month1=%m&day1=%d&')
     service += endts.strftime('year2=%Y&month2=%m&day2=%d&')
 
-    states = """AK AL AR AZ CA CO CT DE FL GA HI IA ID IL IN KS KY LA MA MD ME
-     MI MN MO MS MT NC ND NE NH NJ NM NV NY OH OK OR PA RI SC SD TN TX UT VA VT
-     WA WI WV WY"""
+    #states = 'AK AL AR AZ CA CO CT DE FL GA HI IA ID IL IN KS KY LA MA MD ME MI MN MO MS MT NC ND NE NH NJ NM NV NY OH OK OR PA RI SC SD TN TX UT VA VT WA WI WV WY'
+    # --- edit the line below to have the 2 letter abbreviation of the states for which you want to download.
+    # --- Above is the full list if you forget the abbreviation for a states
+    states = 'AK AL AR AZ CA CO CT DE FL GA HI IA ID IL IN KS KY LA MA MD ME MI MN MO MS MT NC ND NE NH NJ NM NV NY OH OK OR PA RI SC SD TN TX UT VA VT WA WI WV WY'
+    
     # IEM quirk to have Iowa AWOS sites in its own labeled network
     out_dir = "python_output"
     try:
